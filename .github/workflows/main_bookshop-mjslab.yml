@@ -15,7 +15,8 @@ jobs:
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'bookshop-mjslab-g2hjepf9hheqavf8.westcentralus-01'
+        app-name: 'bookshop-mjslab'
         slot-name: 'Production'
         publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+
 
