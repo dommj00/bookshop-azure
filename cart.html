@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>BookShop</h1>
+        <nav>
+            <ul class="nav-list">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="books.php">Books</a></li>
+                <li><a href="cart.html">Cart</a></li>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="admin/login.php">Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="container">
+        <h2>Your Shopping Cart</h2>
+        <div id="cart-items">
+            <p>Your cart is empty</p>
+        </div>
+    </main>
+    
+    <script>
+        // Simple cart display from localStorage
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const cartDiv = document.getElementById('cart-items');
+        
+        if (cart.length > 0) {
+            cartDiv.innerHTML = '<ul>' + cart.map(item => 
+                `<li>${item.title} - $${item.price}</li>`
+            ).join('') + '</ul>';
+        }
+    </script>
+</body>
+</html>
