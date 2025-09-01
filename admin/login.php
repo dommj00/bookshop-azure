@@ -125,11 +125,13 @@
                         $updateSql = "UPDATE AdminUsers SET LastLoginDate = GETDATE() WHERE AdminID = " . $admin['AdminID'];
                         sqlsrv_query($conn, $updateSql);
                         
-                        // VULNERABILITY 5: Client-side redirect with sensitive info
-                        echo '<script>
-                                alert("Welcome Admin: ' . $admin['Username'] . '");
-                                window.location.href = "dashboard.php?admin=' . $admin['Username'] . '";
-                              </script>';
+                        // Store success message in session
+                        $_SESSION['login_message'] = "Welcome Admin: " . $admin['Username'];
+
+                        // VULNERABILITY 5: Redirect with sensitive info in URL
+                        header('Location: dashboard.php?admin=' . $admin['Username']);
+                        exit;
+                        
                     } else {
                         // Check for disabled accounts (information disclosure)
                         $checkDisabled = "SELECT Username, IsActive FROM AdminUsers WHERE Username = '$username'";
