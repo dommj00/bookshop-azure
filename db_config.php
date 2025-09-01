@@ -3,7 +3,7 @@
 $serverName = "bookshop-server-chippy.database.windows.net";
 $connectionOptions = array(
     "Database" => "BookShopDB",
-    "Uid" => "bookshop-admin",
+    "Uid" => "bookshopAdmin",
     "PWD" => "sil3nceAll!",
     "Encrypt" => true,
     "TrustServerCertificate" => false,
