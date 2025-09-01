@@ -97,7 +97,7 @@
             <ul class="nav-list">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
-                <li><a href="cart.html">Cart</a></li>
+                <li><a href="cart.php">Cart</a></li>
                 <li><a href="login.php">Login</a></li>
                 <li><a href="admin/login.php">Admin</a></li>
             </ul>
