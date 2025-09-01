@@ -274,3 +274,36 @@ while ($cat = sqlsrv_fetch_array($categoriesStmt, SQLSRV_FETCH_ASSOC)) {
                     </div>
                     
                     <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" required>
+                            <option value="">Select Category</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo $cat['CategoryID']; ?>"
+                                        <?php echo $book['CategoryID'] == $cat['CategoryID'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($cat['CategoryName']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="text" value="<?php echo htmlspecialchars($book['ImageURL']); ?>" disabled>
+                        <small style="color: #7f8c8d;">Image URL cannot be changed in this version</small>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Description</label>
+                        <textarea name="description" required><?php echo htmlspecialchars($book['Description']); ?></textarea>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" name="update_book" class="update-btn">Update Book</button>
+                    <a href="manage-books.php" class="cancel-btn">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
