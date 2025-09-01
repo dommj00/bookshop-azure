@@ -1,3 +1,57 @@
+<?php
+session_start();
+
+// Process login BEFORE any HTML output
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once '../db_config.php';
+    
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    
+    // VULNERABILITY 1: Plain text password comparison
+    $sql = "SELECT * FROM AdminUsers WHERE Username = '$username' AND Password = '$password' AND IsActive = 1";
+    
+    $stmt = sqlsrv_query($conn, $sql);
+    
+    if ($stmt === false) {
+        $error = "System Error: Unable to process login";
+    } else {
+        $admin = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+        
+        if ($admin) {
+            // VULNERABILITY 2: Predictable session values
+            $_SESSION['admin_id'] = $admin['AdminID'];
+            $_SESSION['admin_username'] = $admin['Username'];
+            $_SESSION['is_admin'] = true;
+            $_SESSION['admin_level'] = 'super_admin'; // VULNERABILITY 3: Hardcoded privilege
+            
+            // Update last login
+            $updateSql = "UPDATE AdminUsers SET LastLoginDate = GETDATE() WHERE AdminID = " . $admin['AdminID'];
+            sqlsrv_query($conn, $updateSql);
+            
+            sqlsrv_close($conn);
+            
+            // VULNERABILITY 5: Redirect with sensitive info in URL
+            header('Location: dashboard.php?admin=' . $admin['Username']);
+            exit();
+            
+        } else {
+            // Check for disabled accounts (information disclosure)
+            $checkDisabled = "SELECT Username, IsActive FROM AdminUsers WHERE Username = '$username'";
+            $checkStmt = sqlsrv_query($conn, $checkDisabled);
+            $account = sqlsrv_fetch_array($checkStmt, SQLSRV_FETCH_ASSOC);
+            
+            if ($account && $account['IsActive'] == 0) {
+                $error = "Account " . $username . " is disabled. Contact system administrator.";
+            } else {
+                $error = "Invalid admin credentials";
+            }
+        }
+    }
+    
+    sqlsrv_close($conn);
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,62 +147,9 @@
         <div class="admin-login-form">
             <h2>🔒 Admin Portal</h2>
             
-            <?php
-            session_start();
-            
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                require_once '../db_config.php';
-                
-                $username = $_POST['username'];
-                $password = $_POST['password'];
-                
-                // VULNERABILITY 1: Plain text password comparison
-                $sql = "SELECT * FROM AdminUsers WHERE Username = '$username' AND Password = '$password' AND IsActive = 1";
-                
-                $stmt = sqlsrv_query($conn, $sql);
-                
-                if ($stmt === false) {
-                    echo '<div class="error-message">System Error: Unable to process login</div>';
-                } else {
-                    $admin = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
-                    
-                    if ($admin) {
-                        // VULNERABILITY 2: Predictable session values
-                        $_SESSION['admin_id'] = $admin['AdminID'];
-                        $_SESSION['admin_username'] = $admin['Username'];
-                        $_SESSION['is_admin'] = true;
-                        $_SESSION['admin_level'] = 'super_admin'; // VULNERABILITY 3: Hardcoded privilege
-                        
-                        // VULNERABILITY 4: No session regeneration
-                        
-                        // Update last login
-                        $updateSql = "UPDATE AdminUsers SET LastLoginDate = GETDATE() WHERE AdminID = " . $admin['AdminID'];
-                        sqlsrv_query($conn, $updateSql);
-                        
-                        // Store success message in session
-                        $_SESSION['login_message'] = "Welcome Admin: " . $admin['Username'];
-
-                        // VULNERABILITY 5: Redirect with sensitive info in URL
-                        header('Location: dashboard.php?admin=' . $admin['Username']);
-                        exit;
-                        
-                    } else {
-                        // Check for disabled accounts (information disclosure)
-                        $checkDisabled = "SELECT Username, IsActive FROM AdminUsers WHERE Username = '$username'";
-                        $checkStmt = sqlsrv_query($conn, $checkDisabled);
-                        $account = sqlsrv_fetch_array($checkStmt, SQLSRV_FETCH_ASSOC);
-                        
-                        if ($account && $account['IsActive'] == 0) {
-                            echo '<div class="error-message">Account ' . $username . ' is disabled. Contact system administrator.</div>';
-                        } else {
-                            echo '<div class="error-message">Invalid admin credentials</div>';
-                        }
-                    }
-                }
-                
-                sqlsrv_close($conn);
-            }
-            ?>
+            <?php if (isset($error)): ?>
+                <div class="error-message"><?php echo $error; ?></div>
+            <?php endif; ?>
             
             <form method="POST" action="login.php" autocomplete="off">
                 <div class="form-group">
