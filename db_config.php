@@ -2,7 +2,7 @@
 // Database configuration - INSECURE: credentials in plain text
 $serverName = "bookshop-server-chippy.database.windows.net";
 $connectionOptions = array(
-    "Database" => "BookshopDB",
+    "Database" => "Bookshop-DB",
     "Uid" => "bookshopuser", 
     "PWD" => "boog13D0Wn#", 
     "Encrypt" => true,
