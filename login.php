@@ -96,11 +96,14 @@
     <header>
         <h1>BookShop</h1>
         <nav>
-            <ul class="nav-list">
+            <ul class="nav-list" id="main-nav">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
-                <li><a href="login.php">Login</a></li>
+                <li><a href="login.php" id="login-link">Login</a></li>
+                <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
+                <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
+                <li id="welcome-user" style="display: none; color: #27ae60;"></li>
                 <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
@@ -138,28 +141,28 @@
                         $_SESSION['user_id'] = $user['UserID'];
                         $_SESSION['username'] = $user['Username'];
                         $_SESSION['logged_in'] = true;
-    
-                        // Set localStorage for UI state management
-                        echo '<script>
-                            localStorage.setItem("userLoggedIn", "true");
-                            localStorage.setItem("username", "' . htmlspecialchars($user['Username']) . '");
-                            localStorage.setItem("userId", "' . $user['UserID'] . '");
-                        </script>';
-    
-                        echo '<div class="success-message">Login successful! Welcome ' . $user['Username'] . '</div>';
-
-                        // Check if user was trying to access account page
-                        $redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'index.html';
-
-                        echo '<script>
-                        setTimeout(function(){ 
-                            window.location.href = "' . $redirect . '"; 
-                        }, 2000);
-                        </script>';
+                        
+                        // VULNERABILITY 5: Session fixation - not regenerating session ID
                         
                         // Update last login without prepared statement
                         $updateSql = "UPDATE Users SET LastLoginDate = GETDATE() WHERE UserID = " . $user['UserID'];
                         sqlsrv_query($conn, $updateSql);
+                        
+                        // Determine redirect destination
+                        $redirectTo = 'index.html';
+                        if (isset($_GET['redirect'])) {
+                            $redirectTo = $_GET['redirect'];
+                        }
+                        
+                        echo '<div class="success-message">Login successful! Welcome ' . htmlspecialchars($user['Username']) . '</div>';
+                        echo '<script>
+                            localStorage.setItem("userLoggedIn", "true");
+                            localStorage.setItem("username", "' . htmlspecialchars($user['Username']) . '");
+                            localStorage.setItem("userId", "' . $user['UserID'] . '");
+                            setTimeout(function(){ 
+                                window.location.href = "' . $redirectTo . '"; 
+                            }, 1000);
+                        </script>';
                         
                     } else {
                         // VULNERABILITY 6: Username enumeration
@@ -179,7 +182,7 @@
             }
             ?>
             
-            <form method="POST" action="login.php">
+            <form method="POST" action="login.php<?php echo isset($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : ''; ?>">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" required 
@@ -202,5 +205,27 @@
             </div>
         </div>
     </main>
+    
+    <script>
+        function updateNavigation() {
+            const isLoggedIn = localStorage.getItem('userLoggedIn');
+            const username = localStorage.getItem('username');
+            
+            if (isLoggedIn === 'true' && username) {
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('account-link').style.display = 'block';
+                document.getElementById('logout-link').style.display = 'block';
+                document.getElementById('welcome-user').style.display = 'block';
+                document.getElementById('welcome-user').textContent = 'Welcome, ' + username + '!';
+            } else {
+                document.getElementById('login-link').style.display = 'block';
+                document.getElementById('account-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('welcome-user').style.display = 'none';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', updateNavigation);
+    </script>
 </body>
 </html>
