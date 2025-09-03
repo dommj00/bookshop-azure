@@ -163,15 +163,32 @@ session_start();
                 
                 echo '<div class="success-message">
                         <h3>Order Placed Successfully!</h3>
-                        <p><strong>Order Number: ' . $orderNumber . '</strong></p>
+                        <p><strong>Order Number: ' . $displayOrderNumber . '</strong></p>
                         <p>Thank you for your order, ' . $name . '!</p>
                         <p>Order Total: $' . number_format($total, 2) . '</p>
                         <p>We\'ll send a confirmation to ' . $email . '</p>
-                        <p><a href="account.php">View your orders</a></p>
+                        <div style="margin-top: 20px;">
+                            <a href="account.php" style="color: white; text-decoration: underline; margin-right: 20px;">View Your Orders</a>
+                            <a href="books.php" style="color: white; text-decoration: underline; margin-right: 20px;">Continue Shopping</a>
+                            <a href="index.html" style="color: white; text-decoration: underline;">Return to Home</a>
+                        </div>
                       </div>';
                 
-                // Clear the cart
-                echo '<script>localStorage.removeItem("cart");</script>';
+                // Hide the checkout form after successful order
+                echo '<script>
+                    // Clear the cart
+                    localStorage.removeItem("cart");
+                    
+                    // Hide the order summary and checkout form if they exist
+                    const orderSummary = document.querySelector(".order-summary");
+                    const checkoutForm = document.querySelector(".checkout-form");
+                    
+                    if (orderSummary) orderSummary.style.display = "none";
+                    if (checkoutForm) checkoutForm.style.display = "none";
+                    
+                    // Scroll to top to ensure success message is visible
+                    window.scrollTo(0, 0);
+                </script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
             }
