@@ -264,12 +264,14 @@ session_start();
                              LEFT JOIN Users u ON o.UserID = u.UserID
                              WHERE o.OrderNumber = 'ORD-$orderNum'";
             } else {
-                // Search by email
-                $searchSql = "SELECT o.*, u.Email, u.Username, u.FirstName, u.LastName,
+                // Search by email - check both user table and order table
+                $searchSql = "SELECT o.*, 
+                             COALESCE(u.Email, o.CustomerEmail) as Email,
+                             u.Username, u.FirstName, u.LastName,
                              (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
                              FROM Orders o 
                              LEFT JOIN Users u ON o.UserID = u.UserID
-                             WHERE u.Email LIKE '%$searchQuery%'
+                             WHERE u.Email LIKE '%$searchQuery%' OR o.CustomerEmail LIKE '%$searchQuery%'
                              ORDER BY o.OrderDate DESC";
             }
             
