@@ -224,8 +224,9 @@ session_start();
                 }
                 
                 // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
-                $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
-                              VALUES (1, '$cardNumber', '$name', '$cvv')";
+                // Link payment method to the specific order
+                $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV, CustomerName, CustomerEmail, OrderID) 
+                              VALUES (1, '$cardNumber', '$name', '$cvv', '$name', '$email', $newOrderId)";
                 sqlsrv_query($conn, $paymentSql);
                 
                 // Log the transaction - XSS VULNERABILITY!
