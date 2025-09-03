@@ -94,12 +94,18 @@
     <header>
         <h1>BookShop</h1>
         <nav>
-            <ul class="nav-list">
+            <ul class="nav-list" id="main-nav">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
-                <li><a href="login.php">Login</a></li>
-                <li><a href="admin/login.php">Admin</a></li>
+                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+                    <li><a href="account.php">My Account</a></li>
+                    <li><a href="logout.php">Logout</a></li>
+                    <li style="color: #27ae60; padding: 0 1rem;">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</li>
+                <?php else: ?>
+                    <li><a href="login.php">Login</a></li>
+                <?php endif; ?>
+                    <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
     </header>
