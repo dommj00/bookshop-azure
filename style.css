@@ -74,3 +74,13 @@ main {
     background-color: #f5f5f5;
     padding: 40px 20px;
 }
+.nav-list li {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-user {
+    color: #27ae60 !important;
+    font-weight: bold;
+    padding: 0 1rem;
+}
