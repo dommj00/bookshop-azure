@@ -3,18 +3,7 @@ session_start();
 
 // Simple check - if no session, redirect to login
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    // Check if we have localStorage data but no session (session expired)
-    echo '<script>
-        const hasLocalLogin = localStorage.getItem("userLoggedIn");
-        if (hasLocalLogin === "true") {
-            // Clear stale localStorage
-            localStorage.removeItem("userLoggedIn");
-            localStorage.removeItem("username");
-            localStorage.removeItem("userId");
-            alert("Your session has expired. Please log in again.");
-        }
-        window.location.href = "login.php?redirect=account.php";
-    </script>';
+    header('Location: login.php?redirect=account.php');
     exit;
 }
 
