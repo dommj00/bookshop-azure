@@ -240,6 +240,7 @@ session_start();
                     <li><strong>Order Number:</strong> Format is ORD-YYYY###### (e.g., ORD-2024123456)</li>
                     <li><strong>Email:</strong> Use the exact email address from your order confirmation</li>
                     <li><strong>Case Sensitive:</strong> Email searches are not case-sensitive</li>
+                    <li><strong>Guest Orders:</strong> No account required - all orders can be tracked</li>
                 </ul>
             </div>
         </div>
@@ -257,21 +258,16 @@ session_start();
             // VULNERABILITY: SQL Injection in search
             if (strpos(strtoupper($searchQuery), 'ORD-') === 0) {
                 // Search by order number
-                $orderNum = str_replace(['ORD-', 'ord-'], '', $searchQuery);
-                $searchSql = "SELECT o.*, u.Email, u.Username, u.FirstName, u.LastName,
+                $searchSql = "SELECT o.*, o.CustomerName as CustomerDisplayName, o.CustomerEmail as DisplayEmail,
                              (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
                              FROM Orders o 
-                             LEFT JOIN Users u ON o.UserID = u.UserID
-                             WHERE o.OrderNumber = 'ORD-$orderNum'";
+                             WHERE o.OrderNumber = '$searchQuery'";
             } else {
-                // Search by email - check both user table and order table
-                $searchSql = "SELECT o.*, 
-                             COALESCE(u.Email, o.CustomerEmail) as Email,
-                             u.Username, u.FirstName, u.LastName,
+                // Search by email
+                $searchSql = "SELECT o.*, o.CustomerName as CustomerDisplayName, o.CustomerEmail as DisplayEmail,
                              (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
                              FROM Orders o 
-                             LEFT JOIN Users u ON o.UserID = u.UserID
-                             WHERE u.Email LIKE '%$searchQuery%' OR o.CustomerEmail LIKE '%$searchQuery%'
+                             WHERE o.CustomerEmail LIKE '%$searchQuery%'
                              ORDER BY o.OrderDate DESC";
             }
             
@@ -283,8 +279,8 @@ session_start();
                 echo '<thead>';
                 echo '<tr>';
                 echo '<th>Order Number</th>';
-                echo '<th>Customer</th>';
-                echo '<th>Email</th>';
+                echo '<th>Customer Name</th>';
+                echo '<th>Email Address</th>';
                 echo '<th>Order Date</th>';
                 echo '<th>Items</th>';
                 echo '<th>Total Amount</th>';
@@ -301,8 +297,8 @@ session_start();
                     
                     echo '<tr>';
                     echo '<td><span class="order-number">' . htmlspecialchars($orderNumber) . '</span></td>';
-                    echo '<td>' . htmlspecialchars($searchResult['FirstName'] . ' ' . $searchResult['LastName']) . '</td>';
-                    echo '<td>' . htmlspecialchars($searchResult['Email']) . '</td>';
+                    echo '<td>' . htmlspecialchars($searchResult['CustomerDisplayName'] ?? 'Guest Customer') . '</td>';
+                    echo '<td>' . htmlspecialchars($searchResult['DisplayEmail'] ?? 'No Email') . '</td>';
                     echo '<td>' . $searchResult['OrderDate']->format('M d, Y H:i') . '</td>';
                     echo '<td>' . $searchResult['ItemCount'] . ' items</td>';
                     echo '<td>$' . number_format($searchResult['TotalAmount'], 2) . '</td>';
@@ -319,6 +315,14 @@ session_start();
                     echo '<div class="no-results">';
                     echo '<p>No orders found matching your search criteria.</p>';
                     echo '<p>Please check your order number or email address and try again.</p>';
+                    echo '<div style="margin-top: 20px;">';
+                    echo '<strong>Common Issues:</strong>';
+                    echo '<ul style="text-align: left; display: inline-block; margin-top: 10px;">';
+                    echo '<li>Make sure to include "ORD-" in your order number</li>';
+                    echo '<li>Check for typos in your email address</li>';
+                    echo '<li>Orders may take a few minutes to appear in our system</li>';
+                    echo '</ul>';
+                    echo '</div>';
                     echo '</div>';
                 }
             } else {
