@@ -147,7 +147,15 @@
                         </script>';
     
                         echo '<div class="success-message">Login successful! Welcome ' . $user['Username'] . '</div>';
-                        echo '<script>setTimeout(function(){ window.location.href = "index.html"; }, 2000);</script>';
+
+                        // Check if user was trying to access account page
+                        $redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'index.html';
+
+                        echo '<script>
+                        setTimeout(function(){ 
+                            window.location.href = "' . $redirect . '"; 
+                        }, 2000);
+                        </script>';
                         
                         // Update last login without prepared statement
                         $updateSql = "UPDATE Users SET LastLoginDate = GETDATE() WHERE UserID = " . $user['UserID'];
