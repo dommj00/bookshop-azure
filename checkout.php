@@ -139,8 +139,8 @@ session_start();
             $orderNumber = 'ORD-' . date('Y') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
             
             // Insert order - SQL INJECTION VULNERABILITY!
-            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber) 
-                         VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber')";
+            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, CustomerEmail) 
+                VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$email')";
             
             $orderResult = sqlsrv_query($conn, $orderSql);
             
