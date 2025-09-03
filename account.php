@@ -288,12 +288,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_payment'])) {
     <header>
         <h1>BookShop</h1>
         <nav>
-            <ul class="nav-list">
+            <ul class="nav-list" id="main-nav">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
-                <li><a href="account.php">My Account</a></li>
-                <li><a href="logout.php">Logout</a></li>
+                <li><a href="orders.php">Orders</a></li>
+                <li><a href="login.php" id="login-link">Login</a></li>
+                <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
+                <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
+                <li id="welcome-user" style="display: none; color: #27ae60;"></li>
+                <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
     </header>
