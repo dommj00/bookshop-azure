@@ -15,9 +15,17 @@ $userSql = "SELECT * FROM Users WHERE UserID = $userId";
 $userStmt = sqlsrv_query($conn, $userSql);
 $user = sqlsrv_fetch_array($userStmt, SQLSRV_FETCH_ASSOC);
 
-// Get user's orders
-$ordersSql = "SELECT * FROM Orders WHERE UserID = $userId ORDER BY OrderDate DESC";
+// Get user's orders with details
+$ordersSql = "SELECT o.*, 
+              (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
+              FROM Orders o 
+              WHERE o.UserID = $userId 
+              ORDER BY o.OrderDate DESC";
 $ordersStmt = sqlsrv_query($conn, $ordersSql);
+
+// Get user's payment methods - VULNERABILITY: Displaying sensitive data
+$paymentSql = "SELECT * FROM PaymentMethods WHERE UserID = $userId";
+$paymentStmt = sqlsrv_query($conn, $paymentSql);
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
@@ -37,6 +45,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     } else {
         $error = "Failed to update profile.";
     }
+}
+
+// Handle payment method update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_payment'])) {
+    $cardNumber = $_POST['card_number'];
+    $cardholderName = $_POST['cardholder_name'];
+    $cvv = $_POST['cvv'];
+    $expiryDate = $_POST['expiry_date'];
+    
+    // VULNERABILITY: Storing sensitive payment data in plain text
+    $updatePaymentSql = "UPDATE PaymentMethods SET 
+                        CardNumber = '$cardNumber', 
+                        CardholderName = '$cardholderName', 
+                        CVV = '$cvv',
+                        ExpiryDate = '$expiryDate'
+                        WHERE UserID = $userId";
+    
+    if (sqlsrv_query($conn, $updatePaymentSql)) {
+        $paymentSuccess = "Payment information updated successfully!";
+    } else {
+        $paymentError = "Failed to update payment information.";
+    }
+    
+    // Refresh payment data
+    $paymentStmt = sqlsrv_query($conn, $paymentSql);
 }
 ?>
 <!DOCTYPE html>
@@ -90,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             text-decoration: none;
             border-radius: 4px;
             margin-bottom: 5px;
+            cursor: pointer;
         }
         
         .sidebar-links a:hover {
@@ -110,6 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         
         .section {
             margin-bottom: 30px;
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
         }
         
         .section h2 {
@@ -188,17 +227,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             color: #e74c3c;
         }
         
-        .logout-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
         .alert {
             padding: 12px;
             border-radius: 4px;
@@ -215,6 +243,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
+        }
+        
+        .search-orders {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .search-orders input {
+            width: 300px;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        
+        .search-orders button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .payment-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .payment-display p {
+            margin: 5px 0;
+        }
+        
+        .sensitive-data {
+            color: #e74c3c;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -242,9 +308,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     <p>Member since: <?php echo $user['CreatedDate']->format('M Y'); ?></p>
                 </div>
                 <div class="sidebar-links">
-                    <a href="#profile" class="active">Profile Settings</a>
-                    <a href="#orders">Order History</a>
-                    <a href="#security">Security Settings</a>
+                    <a href="#" onclick="showSection('profile')" class="active">Profile Settings</a>
+                    <a href="#" onclick="showSection('orders')">Order History</a>
+                    <a href="#" onclick="showSection('search-orders')">Search Orders</a>
+                    <a href="#" onclick="showSection('payment')">Payment Information</a>
+                    <a href="#" onclick="showSection('security')">Security Settings</a>
                     <a href="logout.php" style="color: #e74c3c;">Logout</a>
                 </div>
             </div>
@@ -258,7 +326,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     <div class="alert alert-error"><?php echo $error; ?></div>
                 <?php endif; ?>
                 
-                <section class="section" id="profile">
+                <?php if (isset($paymentSuccess)): ?>
+                    <div class="alert alert-success"><?php echo $paymentSuccess; ?></div>
+                <?php endif; ?>
+                
+                <?php if (isset($paymentError)): ?>
+                    <div class="alert alert-error"><?php echo $paymentError; ?></div>
+                <?php endif; ?>
+                
+                <!-- Profile Settings Section -->
+                <section class="section active" id="profile">
                     <h2>Profile Settings</h2>
                     <form method="POST" action="account.php">
                         <div class="form-row">
@@ -287,13 +364,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </form>
                 </section>
                 
+                <!-- Order History Section -->
                 <section class="section" id="orders">
                     <h2>Order History</h2>
                     <table class="orders-table">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>Order Number</th>
                                 <th>Date</th>
+                                <th>Items</th>
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Shipping Address</th>
@@ -306,9 +385,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                                 while ($order = sqlsrv_fetch_array($ordersStmt, SQLSRV_FETCH_ASSOC)) {
                                     $hasOrders = true;
                                     $statusClass = 'status-' . strtolower($order['Status']);
+                                    $orderNumber = 'ORD-' . str_pad($order['OrderID'], 6, '0', STR_PAD_LEFT);
                                     echo '<tr>';
-                                    echo '<td>#' . str_pad($order['OrderID'], 5, '0', STR_PAD_LEFT) . '</td>';
+                                    echo '<td><strong>' . $orderNumber . '</strong></td>';
                                     echo '<td>' . $order['OrderDate']->format('M d, Y') . '</td>';
+                                    echo '<td>' . $order['ItemCount'] . ' items</td>';
                                     echo '<td>$' . number_format($order['TotalAmount'], 2) . '</td>';
                                     echo '<td class="' . $statusClass . '">' . $order['Status'] . '</td>';
                                     // VULNERABILITY: XSS - displaying address without proper sanitization
@@ -317,7 +398,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                                 }
                                 
                                 if (!$hasOrders) {
-                                    echo '<tr><td colspan="5" style="text-align: center; color: #7f8c8d;">No orders found</td></tr>';
+                                    echo '<tr><td colspan="6" style="text-align: center; color: #7f8c8d;">No orders found</td></tr>';
                                 }
                             }
                             ?>
@@ -325,6 +406,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </table>
                 </section>
                 
+                <!-- Search Orders Section -->
+                <section class="section" id="search-orders">
+                    <h2>Search Orders</h2>
+                    <div class="search-orders">
+                        <form method="GET" action="account.php" id="search-form">
+                            <input type="text" name="search_query" placeholder="Enter order number (ORD-123456) or email address" 
+                                   value="<?php echo $_GET['search_query'] ?? ''; ?>">
+                            <button type="submit" name="search_orders">Search Orders</button>
+                        </form>
+                    </div>
+                    
+                    <?php
+                    if (isset($_GET['search_orders']) && !empty($_GET['search_query'])) {
+                        $searchQuery = $_GET['search_query'];
+                        
+                        // VULNERABILITY: SQL Injection in search
+                        if (strpos($searchQuery, 'ORD-') === 0) {
+                            // Search by order number
+                            $orderNum = str_replace('ORD-', '', $searchQuery);
+                            $searchSql = "SELECT o.*, u.Email, u.Username,
+                                         (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
+                                         FROM Orders o 
+                                         JOIN Users u ON o.UserID = u.UserID
+                                         WHERE o.OrderID = $orderNum";
+                        } else {
+                            // Search by email
+                            $searchSql = "SELECT o.*, u.Email, u.Username,
+                                         (SELECT COUNT(*) FROM OrderItems oi WHERE oi.OrderID = o.OrderID) as ItemCount
+                                         FROM Orders o 
+                                         JOIN Users u ON o.UserID = u.UserID
+                                         WHERE u.Email LIKE '%$searchQuery%'
+                                         ORDER BY o.OrderDate DESC";
+                        }
+                        
+                        $searchStmt = sqlsrv_query($conn, $searchSql);
+                        
+                        if ($searchStmt) {
+                            echo '<h3>Search Results for: ' . htmlspecialchars($searchQuery) . '</h3>';
+                            echo '<table class="orders-table">';
+                            echo '<thead><tr><th>Order Number</th><th>Customer</th><th>Email</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>';
+                            echo '<tbody>';
+                            
+                            $foundResults = false;
+                            while ($searchResult = sqlsrv_fetch_array($searchStmt, SQLSRV_FETCH_ASSOC)) {
+                                $foundResults = true;
+                                $statusClass = 'status-' . strtolower($searchResult['Status']);
+                                $orderNumber = 'ORD-' . str_pad($searchResult['OrderID'], 6, '0', STR_PAD_LEFT);
+                                
+                                echo '<tr>';
+                                echo '<td><strong>' . $orderNumber . '</strong></td>';
+                                echo '<td>' . htmlspecialchars($searchResult['Username']) . '</td>';
+                                echo '<td>' . htmlspecialchars($searchResult['Email']) . '</td>';
+                                echo '<td>' . $searchResult['OrderDate']->format('M d, Y') . '</td>';
+                                echo '<td>' . $searchResult['ItemCount'] . ' items</td>';
+                                echo '<td>$' . number_format($searchResult['TotalAmount'], 2) . '</td>';
+                                echo '<td class="' . $statusClass . '">' . $searchResult['Status'] . '</td>';
+                                echo '</tr>';
+                            }
+                            
+                            if (!$foundResults) {
+                                echo '<tr><td colspan="7" style="text-align: center; color: #7f8c8d;">No orders found for your search</td></tr>';
+                            }
+                            
+                            echo '</tbody></table>';
+                        }
+                    }
+                    ?>
+                </section>
+                
+                <!-- Payment Information Section -->
+                <section class="section" id="payment">
+                    <h2>Payment Information</h2>
+                    
+                    <?php
+                    $paymentMethod = sqlsrv_fetch_array($paymentStmt, SQLSRV_FETCH_ASSOC);
+                    if ($paymentMethod):
+                    ?>
+                    <div class="payment-display">
+                        <h3>Current Payment Method</h3>
+                        <p><strong>Cardholder Name:</strong> <?php echo htmlspecialchars($paymentMethod['CardholderName']); ?></p>
+                        <!-- VULNERABILITY: Displaying full credit card number -->
+                        <p><strong>Card Number:</strong> <span class="sensitive-data"><?php echo $paymentMethod['CardNumber']; ?></span></p>
+                        <p><strong>CVV:</strong> <span class="sensitive-data"><?php echo $paymentMethod['CVV']; ?></span></p>
+                        <p><strong>Expiry Date:</strong> <?php echo htmlspecialchars($paymentMethod['ExpiryDate'] ?? ''); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <h3>Update Payment Information</h3>
+                    <form method="POST" action="account.php">
+                        <div class="form-group">
+                            <label>Cardholder Name</label>
+                            <input type="text" name="cardholder_name" value="<?php echo htmlspecialchars($paymentMethod['CardholderName'] ?? ''); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" name="card_number" placeholder="1234 5678 9012 3456" 
+                                   value="<?php echo $paymentMethod['CardNumber'] ?? ''; ?>" maxlength="16" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Expiry Date</label>
+                                <input type="text" name="expiry_date" placeholder="MM/YY" 
+                                       value="<?php echo htmlspecialchars($paymentMethod['ExpiryDate'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="text" name="cvv" placeholder="123" 
+                                       value="<?php echo $paymentMethod['CVV'] ?? ''; ?>" maxlength="3" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" name="update_payment" class="update-btn">Update Payment Information</button>
+                    </form>
+                </section>
+                
+                <!-- Security Settings Section -->
                 <section class="section" id="security">
                     <h2>Security Settings</h2>
                     <p style="color: #7f8c8d;">Last login: <?php echo $user['LastLoginDate'] ? $user['LastLoginDate']->format('M d, Y H:i') : 'Never'; ?></p>
@@ -335,5 +534,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             </div>
         </div>
     </main>
+    
+    <script>
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update sidebar active link
+            const links = document.querySelectorAll('.sidebar-links a');
+            links.forEach(link => link.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        // Handle search form redirect
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            const searchQuery = document.querySelector('input[name="search_query"]').value;
+            if (searchQuery) {
+                window.location.href = `account.php?search_orders=1&search_query=${encodeURIComponent(searchQuery)}`;
+                e.preventDefault();
+            }
+        });
+        
+        // Show search results section if we have search parameters
+        if (window.location.search.includes('search_orders')) {
+            showSection('search-orders');
+            // Update active link
+            document.querySelectorAll('.sidebar-links a').forEach(link => link.classList.remove('active'));
+            document.querySelector('a[onclick="showSection(\'search-orders\')"]').classList.add('active');
+        }
+    </script>
 </body>
 </html>
