@@ -196,13 +196,32 @@ session_start();
             echo '<div class="debug-info">Debug SQL: ' . htmlspecialchars($orderSql) . '</div>';
             
             $orderResult = sqlsrv_query($conn, $orderSql);
-            
+
             if ($orderResult) {
                 // Get the inserted order ID
                 $orderIdSql = "SELECT @@IDENTITY as OrderID";
                 $orderIdResult = sqlsrv_query($conn, $orderIdSql);
                 $orderIdRow = sqlsrv_fetch_array($orderIdResult);
                 $newOrderId = $orderIdRow['OrderID'];
+                
+                // Insert order items - SQL INJECTION VULNERABILITY!
+                foreach ($cart as $item) {
+                    $quantity = $item['quantity'] ?? 1;
+                    $price = $item['price'];
+                    $title = $item['title'];
+                    
+                    // Find the ProductID for this item
+                    $productSql = "SELECT ProductID FROM Products WHERE Title = '$title'";
+                    $productStmt = sqlsrv_query($conn, $productSql);
+                    
+                    if ($productStmt && $productRow = sqlsrv_fetch_array($productStmt)) {
+                        $productId = $productRow['ProductID'];
+                        
+                        $orderItemSql = "INSERT INTO OrderItems (OrderID, ProductID, Quantity, Price) 
+                                        VALUES ($newOrderId, $productId, $quantity, $price)";
+                        sqlsrv_query($conn, $orderItemSql);
+                    }
+                }
                 
                 // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
                 $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
