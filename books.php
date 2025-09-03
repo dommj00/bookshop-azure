@@ -1,7 +1,6 @@
 <?php
 session_start();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,14 +101,11 @@ session_start();
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
-                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
-                    <li><a href="account.php">My Account</a></li>
-                    <li><a href="logout.php">Logout</a></li>
-                    <li style="color: #27ae60; padding: 0 1rem;">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</li>
-                <?php else: ?>
-                    <li><a href="login.php">Login</a></li>
-                <?php endif; ?>
-                    <li><a href="admin/login.php">Admin</a></li>
+                <li><a href="login.php" id="login-link">Login</a></li>
+                <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
+                <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
+                <li id="welcome-user" style="display: none; color: #27ae60;"></li>
+                <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
     </header>
@@ -188,37 +184,26 @@ session_start();
             localStorage.setItem('cart', JSON.stringify(cart));
             alert(title + ' added to cart!');
         }
-    </script>
-
-    <script>
-    // Check login state and update navigation
-    function checkLoginState() {
-        const isLoggedIn = localStorage.getItem('userLoggedIn');
-        const username = localStorage.getItem('username');
-    
-        if (isLoggedIn === 'true' && username) {
-            // Find and update navigation links
-            const loginLink = document.querySelector('a[href="login.php"]');
-            if (loginLink) {
-                loginLink.style.display = 'none';
+        
+        function updateNavigation() {
+            const isLoggedIn = localStorage.getItem('userLoggedIn');
+            const username = localStorage.getItem('username');
             
-            // Add account and logout links if they don't exist
-            const nav = document.querySelector('.nav-list');
-            if (!document.querySelector('a[href="account.php"]')) {
-                const accountLink = document.createElement('li');
-                accountLink.innerHTML = '<a href="account.php">My Account</a>';
-                nav.insertBefore(accountLink, loginLink.parentNode);
-                
-                const logoutLink = document.createElement('li');
-                logoutLink.innerHTML = '<a href="logout.php">Logout</a>';
-                nav.insertBefore(logoutLink, loginLink.parentNode);
+            if (isLoggedIn === 'true' && username) {
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('account-link').style.display = 'block';
+                document.getElementById('logout-link').style.display = 'block';
+                document.getElementById('welcome-user').style.display = 'block';
+                document.getElementById('welcome-user').textContent = 'Welcome, ' + username + '!';
+            } else {
+                document.getElementById('login-link').style.display = 'block';
+                document.getElementById('account-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('welcome-user').style.display = 'none';
             }
         }
-    }
-}
-
-// Run on page load
-document.addEventListener('DOMContentLoaded', checkLoginState);
-</script>    
+        
+        document.addEventListener('DOMContentLoaded', updateNavigation);
+    </script>
 </body>
 </html>
