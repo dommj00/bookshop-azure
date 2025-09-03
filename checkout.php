@@ -66,7 +66,7 @@ session_start();
         .success-message {
             background: #27ae60;
             color: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
             text-align: center;
             margin-bottom: 20px;
@@ -91,6 +91,46 @@ session_start();
         .submit-btn:hover {
             background: #229954;
         }
+        
+        .order-number-highlight {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 2px solid white;
+        }
+        
+        .countdown-timer {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .action-buttons {
+            margin-top: 25px;
+        }
+        
+        .print-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .track-btn {
+            background: white;
+            color: #27ae60;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +141,7 @@ session_start();
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
+                <li><a href="orders.php">Orders</a></li>
                 <li><a href="login.php" id="login-link">Login</a></li>
                 <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
                 <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
@@ -139,8 +180,9 @@ session_start();
             $orderNumber = 'ORD-' . date('Y') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
             
             // Insert order - SQL INJECTION VULNERABILITY!
-            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, CustomerEmail) 
-                VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$email')";
+            // Store actual form data instead of UserID lookup
+            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber, CustomerEmail, CustomerName) 
+                         VALUES (NULL, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber', '$email', '$name')";
             
             $orderResult = sqlsrv_query($conn, $orderSql);
             
@@ -153,33 +195,47 @@ session_start();
                 
                 // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
                 $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
-                              VALUES (1, '$cardNumber', '$name', '$cvv')";
+                              VALUES (NULL, '$cardNumber', '$name', '$cvv')";
                 sqlsrv_query($conn, $paymentSql);
                 
                 // Log the transaction - XSS VULNERABILITY!
                 $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
-                          VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
+                          VALUES (NULL, 'Order Placed', 'Orders', '$name placed order for $$total')";
                 sqlsrv_query($conn, $logSql);
                 
-                echo '<div class="success-message">
+                echo '<div class="success-message" id="order-confirmation">
                         <h3>Order Placed Successfully!</h3>
-                        <p><strong>Order Number: ' . $displayOrderNumber . '</strong></p>
-                        <p>Thank you for your order, ' . $name . '!</p>
-                        <p>Order Total: $' . number_format($total, 2) . '</p>
-                        <p>We\'ll send a confirmation to ' . $email . '</p>
-                        <div style="margin-top: 20px;">
-                            <a href="account.php" style="color: white; text-decoration: underline; margin-right: 20px;">View Your Orders</a>
-                            <a href="books.php" style="color: white; text-decoration: underline; margin-right: 20px;">Continue Shopping</a>
-                            <a href="index.html" style="color: white; text-decoration: underline;">Return to Home</a>
+                        <div class="order-number-highlight">
+                            <p style="font-size: 24px; margin: 10px 0;"><strong>Order Number: ' . $orderNumber . '</strong></p>
+                            <p style="font-size: 14px; margin: 5px 0;">Please save this order number for your records</p>
+                        </div>
+                        <p><strong>Customer:</strong> ' . htmlspecialchars($name) . '</p>
+                        <p><strong>Email:</strong> ' . htmlspecialchars($email) . '</p>
+                        <p><strong>Order Total:</strong> $' . number_format($total, 2) . '</p>
+                        <p>A confirmation has been sent to ' . htmlspecialchars($email) . '</p>
+                        
+                        <div id="countdown-timer" class="countdown-timer">
+                            This confirmation will remain visible for <span id="countdown">60</span> seconds, or until you navigate away.
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button onclick="window.print()" class="print-btn">
+                                Print Confirmation
+                            </button>
+                            <a href="orders.php?search_query=' . urlencode($orderNumber) . '" class="track-btn">
+                                Track This Order
+                            </a>
+                            <a href="books.php" style="color: white; text-decoration: underline; margin-right: 20px; font-size: 16px;">Continue Shopping</a>
+                            <a href="index.html" style="color: white; text-decoration: underline; font-size: 16px;">Return to Home</a>
                         </div>
                       </div>';
                 
-                // Hide the checkout form after successful order
+                // Hide the checkout form and add countdown timer
                 echo '<script>
                     // Clear the cart
                     localStorage.removeItem("cart");
                     
-                    // Hide the order summary and checkout form if they exist
+                    // Hide the order summary and checkout form
                     const orderSummary = document.querySelector(".order-summary");
                     const checkoutForm = document.querySelector(".checkout-form");
                     
@@ -188,6 +244,28 @@ session_start();
                     
                     // Scroll to top to ensure success message is visible
                     window.scrollTo(0, 0);
+                    
+                    // Add 60-second countdown timer
+                    let timeLeft = 60;
+                    const countdownElement = document.getElementById("countdown");
+                    const timerElement = document.getElementById("countdown-timer");
+                    
+                    const timer = setInterval(function() {
+                        timeLeft--;
+                        countdownElement.textContent = timeLeft;
+                        
+                        if (timeLeft <= 10) {
+                            timerElement.style.background = "rgba(231, 76, 60, 0.2)";
+                            timerElement.style.color = "#e74c3c";
+                        }
+                        
+                        if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            timerElement.innerHTML = "Timer expired - confirmation will remain until you navigate away";
+                            timerElement.style.background = "rgba(149, 165, 166, 0.2)";
+                            timerElement.style.color = "#95a5a6";
+                        }
+                    }, 1000);
                 </script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
