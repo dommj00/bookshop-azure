@@ -1,7 +1,6 @@
 <?php
 session_start();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,6 +72,11 @@ session_start();
             margin-bottom: 20px;
         }
         
+        .success-message a {
+            color: white;
+            text-decoration: underline;
+        }
+        
         .submit-btn {
             background: #27ae60;
             color: white;
@@ -93,11 +97,14 @@ session_start();
     <header>
         <h1>BookShop</h1>
         <nav>
-            <ul class="nav-list">
+            <ul class="nav-list" id="main-nav">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="books.php">Books</a></li>
                 <li><a href="cart.php">Cart</a></li>
-                <li><a href="login.php">Login</a></li>
+                <li><a href="login.php" id="login-link">Login</a></li>
+                <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
+                <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
+                <li id="welcome-user" style="display: none; color: #27ae60;"></li>
                 <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
@@ -130,42 +137,41 @@ session_start();
             
             // Generate unique order number
             $orderNumber = 'ORD-' . date('Y') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
-
+            
             // Insert order - SQL INJECTION VULNERABILITY!
             $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber) 
-                VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber')";
-
+                         VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber')";
+            
             $orderResult = sqlsrv_query($conn, $orderSql);
             
             if ($orderResult) {
-            // Get the inserted order ID
-            $orderIdSql = "SELECT @@IDENTITY as OrderID";
-            $orderIdResult = sqlsrv_query($conn, $orderIdSql);
-            $orderIdRow = sqlsrv_fetch_array($orderIdResult);
-            $newOrderId = $orderIdRow['OrderID'];
-    
-            // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
-            $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
-                VALUES (1, '$cardNumber', '$name', '$cvv')";
-            sqlsrv_query($conn, $paymentSql);
-    
-            // Log the transaction - XSS VULNERABILITY!
-            $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
-                VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
-            sqlsrv_query($conn, $logSql);
-    
-            echo '<div class="success-message">
-                    <h3>Order Placed Successfully!</h3>
-                    <p><strong>Order Number: ' . $orderNumber . '</strong></p>
-                    <p>Thank you for your order, ' . $name . '!</p>
-                    <p>Order Total: $' . number_format($total, 2) . '</p>
-                    <p>We\'ll send a confirmation to ' . $email . '</p>
-                    <p><a href="account.php" style="color: white; text-decoration: underline;">View your orders</a></p>
-                  </div>';
-    
-            // Clear the cart
-            echo '<script>localStorage.removeItem("cart");</script>';
+                // Get the inserted order ID
+                $orderIdSql = "SELECT @@IDENTITY as OrderID";
+                $orderIdResult = sqlsrv_query($conn, $orderIdSql);
+                $orderIdRow = sqlsrv_fetch_array($orderIdResult);
+                $newOrderId = $orderIdRow['OrderID'];
                 
+                // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
+                $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
+                              VALUES (1, '$cardNumber', '$name', '$cvv')";
+                sqlsrv_query($conn, $paymentSql);
+                
+                // Log the transaction - XSS VULNERABILITY!
+                $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
+                          VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
+                sqlsrv_query($conn, $logSql);
+                
+                echo '<div class="success-message">
+                        <h3>Order Placed Successfully!</h3>
+                        <p><strong>Order Number: ' . $orderNumber . '</strong></p>
+                        <p>Thank you for your order, ' . $name . '!</p>
+                        <p>Order Total: $' . number_format($total, 2) . '</p>
+                        <p>We\'ll send a confirmation to ' . $email . '</p>
+                        <p><a href="account.php">View your orders</a></p>
+                      </div>';
+                
+                // Clear the cart
+                echo '<script>localStorage.removeItem("cart");</script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
             }
@@ -291,8 +297,29 @@ session_start();
             return true;
         }
         
-        // Load order summary on page load
-        loadOrderSummary();
+        function updateNavigation() {
+            const isLoggedIn = localStorage.getItem('userLoggedIn');
+            const username = localStorage.getItem('username');
+            
+            if (isLoggedIn === 'true' && username) {
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('account-link').style.display = 'block';
+                document.getElementById('logout-link').style.display = 'block';
+                document.getElementById('welcome-user').style.display = 'block';
+                document.getElementById('welcome-user').textContent = 'Welcome, ' + username + '!';
+            } else {
+                document.getElementById('login-link').style.display = 'block';
+                document.getElementById('account-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('welcome-user').style.display = 'none';
+            }
+        }
+        
+        // Load order summary and update navigation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNavigation();
+            loadOrderSummary();
+        });
     </script>
 </body>
 </html>
