@@ -131,6 +131,15 @@ session_start();
             margin-right: 10px;
             font-weight: bold;
         }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -180,9 +189,11 @@ session_start();
             $orderNumber = 'ORD-' . date('Y') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
             
             // Insert order - SQL INJECTION VULNERABILITY!
-            // Store actual form data instead of UserID lookup
             $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber, CustomerEmail, CustomerName) 
-                         VALUES (NULL, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber', '$email', '$name')";
+                         VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber', '$email', '$name')";
+            
+            // Debug: Show the SQL being executed
+            echo '<div class="debug-info">Debug SQL: ' . htmlspecialchars($orderSql) . '</div>';
             
             $orderResult = sqlsrv_query($conn, $orderSql);
             
@@ -195,12 +206,12 @@ session_start();
                 
                 // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
                 $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
-                              VALUES (NULL, '$cardNumber', '$name', '$cvv')";
+                              VALUES (1, '$cardNumber', '$name', '$cvv')";
                 sqlsrv_query($conn, $paymentSql);
                 
                 // Log the transaction - XSS VULNERABILITY!
                 $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
-                          VALUES (NULL, 'Order Placed', 'Orders', '$name placed order for $$total')";
+                          VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
                 sqlsrv_query($conn, $logSql);
                 
                 echo '<div class="success-message" id="order-confirmation">
@@ -269,6 +280,7 @@ session_start();
                 </script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
+                echo '<div class="debug-info">SQL Error: ' . print_r(sqlsrv_errors(), true) . '</div>';
             }
             
             sqlsrv_close($conn);
