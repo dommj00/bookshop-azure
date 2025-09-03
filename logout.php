@@ -18,6 +18,15 @@ if (isset($_SESSION['user_id'])) {
 // Destroy session
 session_destroy();
 
+// Clear localStorage
+echo '<script>
+    localStorage.removeItem("userLoggedIn");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+</script>';
+
+// Redirect to homepage
+header('Location: index.html');
 // Redirect to homepage
 header('Location: index.html');
 exit;
