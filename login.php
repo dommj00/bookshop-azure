@@ -138,9 +138,14 @@
                         $_SESSION['user_id'] = $user['UserID'];
                         $_SESSION['username'] = $user['Username'];
                         $_SESSION['logged_in'] = true;
-                        
-                        // VULNERABILITY 5: Session fixation - not regenerating session ID
-                        
+    
+                        // Set localStorage for UI state management
+                        echo '<script>
+                            localStorage.setItem("userLoggedIn", "true");
+                            localStorage.setItem("username", "' . htmlspecialchars($user['Username']) . '");
+                            localStorage.setItem("userId", "' . $user['UserID'] . '");
+                        </script>';
+    
                         echo '<div class="success-message">Login successful! Welcome ' . $user['Username'] . '</div>';
                         echo '<script>setTimeout(function(){ window.location.href = "index.html"; }, 2000);</script>';
                         
