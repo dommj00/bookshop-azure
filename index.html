@@ -10,17 +10,24 @@
     <header>
         <h1>BookShop</h1>
         <nav>
-            <ul class="nav-list">
-                <a href="index.html">Home</a>
-                <a href="books.php">Books</a>
-                <a href="cart.php">Cart</a>
-                <a href="login.php">Login</a>
-                <a href="admin/login.php">Admin</a>
+            <ul class="nav-list" id="main-nav">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="books.php">Books</a></li>
+                <li><a href="cart.php">Cart</a></li>
+                <!-- Navigation will be updated by JavaScript based on login state -->
+                <li><a href="login.php" id="login-link">Login</a></li>
+                <li><a href="account.php" id="account-link" style="display: none;">My Account</a></li>
+                <li><a href="logout.php" id="logout-link" style="display: none;">Logout</a></li>
+                <li><a href="admin/login.php">Admin</a></li>
             </ul>
         </nav>
     </header>
     
     <main>
+        <div id="user-welcome" style="display: none; background: #d4edda; padding: 10px; text-align: center; color: #155724; margin-bottom: 20px;">
+            Welcome back, <span id="username-display"></span>!
+        </div>
+        
         <section id="featured">
             <h2>Featured Books</h2>
             <div id="book-list" class="book-grid">
@@ -29,6 +36,68 @@
         </section>
     </main>
     
-    <script src="app.js"></script>
+    <script>
+        // Check login state on page load
+        function checkLoginState() {
+            // Check if user is logged in (this would normally check a session)
+            // For now, we'll use localStorage to simulate session state
+            const isLoggedIn = localStorage.getItem('userLoggedIn');
+            const username = localStorage.getItem('username');
+            
+            if (isLoggedIn === 'true' && username) {
+                // User is logged in - show account links
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('account-link').style.display = 'block';
+                document.getElementById('logout-link').style.display = 'block';
+                document.getElementById('user-welcome').style.display = 'block';
+                document.getElementById('username-display').textContent = username;
+            } else {
+                // User is not logged in - show login link
+                document.getElementById('login-link').style.display = 'block';
+                document.getElementById('account-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('user-welcome').style.display = 'none';
+            }
+        }
+
+        // Sample book data (this would normally come from your database)
+        const featuredBooks = [
+            { title: "The Midnight Garden", price: 24.99, image: "midnight-garden.jpg" },
+            { title: "Echoes of Tomorrow", price: 19.99, image: "echoes-tomorrow.jpg" },
+            { title: "The Last Bookkeeper", price: 22.99, image: "last-bookkeeper.jpg" },
+            { title: "Crimson Tides", price: 18.99, image: "crimson-tides.jpg" }
+        ];
+
+        function loadFeaturedBooks() {
+            const bookList = document.getElementById('book-list');
+            let html = '';
+            
+            featuredBooks.forEach(book => {
+                html += `
+                    <div class="book-card">
+                        <img src="images/${book.image}" alt="${book.title}" onerror="this.src='images/default-book.jpg'">
+                        <h3>${book.title}</h3>
+                        <p class="price">$${book.price.toFixed(2)}</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('${book.title}', ${book.price})">Add to Cart</button>
+                    </div>
+                `;
+            });
+            
+            bookList.innerHTML = html;
+        }
+
+        function addToCart(title, price) {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart.push({title: title, price: price});
+            localStorage.setItem('cart', JSON.stringify(cart));
+            alert(title + ' added to cart!');
+        }
+
+        // Load content when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginState();
+            loadFeaturedBooks();
+        });
+    </script>
 </body>
 </html>
