@@ -179,5 +179,36 @@
             alert(title + ' added to cart!');
         }
     </script>
+
+    <script>
+    // Check login state and update navigation
+    function checkLoginState() {
+        const isLoggedIn = localStorage.getItem('userLoggedIn');
+        const username = localStorage.getItem('username');
+    
+        if (isLoggedIn === 'true' && username) {
+            // Find and update navigation links
+            const loginLink = document.querySelector('a[href="login.php"]');
+            if (loginLink) {
+                loginLink.style.display = 'none';
+            
+            // Add account and logout links if they don't exist
+            const nav = document.querySelector('.nav-list');
+            if (!document.querySelector('a[href="account.php"]')) {
+                const accountLink = document.createElement('li');
+                accountLink.innerHTML = '<a href="account.php">My Account</a>';
+                nav.insertBefore(accountLink, loginLink.parentNode);
+                
+                const logoutLink = document.createElement('li');
+                logoutLink.innerHTML = '<a href="logout.php">Logout</a>';
+                nav.insertBefore(logoutLink, loginLink.parentNode);
+            }
+        }
+    }
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', checkLoginState);
+</script>    
 </body>
 </html>
