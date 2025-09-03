@@ -124,32 +124,44 @@
                 $total += $item['price'] * ($item['quantity'] ?? 1);
             }
             
+            // Generate unique order number
+            $orderNumber = 'ORD-' . date('Y') . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+
             // Insert order - SQL INJECTION VULNERABILITY!
-            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress) 
-                         VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip')";
-            
+            $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber) 
+                VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber')";
+
             $orderResult = sqlsrv_query($conn, $orderSql);
             
             if ($orderResult) {
-                // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
-                $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
-                              VALUES (1, '$cardNumber', '$name', '$cvv')";
-                sqlsrv_query($conn, $paymentSql);
+            // Get the inserted order ID
+            $orderIdSql = "SELECT @@IDENTITY as OrderID";
+            $orderIdResult = sqlsrv_query($conn, $orderIdSql);
+            $orderIdRow = sqlsrv_fetch_array($orderIdResult);
+            $newOrderId = $orderIdRow['OrderID'];
+    
+            // Store payment info - STORING SENSITIVE DATA IN PLAIN TEXT!
+            $paymentSql = "INSERT INTO PaymentMethods (UserID, CardNumber, CardholderName, CVV) 
+                VALUES (1, '$cardNumber', '$name', '$cvv')";
+            sqlsrv_query($conn, $paymentSql);
+    
+            // Log the transaction - XSS VULNERABILITY!
+            $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
+                VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
+            sqlsrv_query($conn, $logSql);
+    
+            echo '<div class="success-message">
+                    <h3>Order Placed Successfully!</h3>
+                    <p><strong>Order Number: ' . $orderNumber . '</strong></p>
+                    <p>Thank you for your order, ' . $name . '!</p>
+                    <p>Order Total: $' . number_format($total, 2) . '</p>
+                    <p>We\'ll send a confirmation to ' . $email . '</p>
+                    <p><a href="account.php" style="color: white; text-decoration: underline;">View your orders</a></p>
+                  </div>';
+    
+            // Clear the cart
+            echo '<script>localStorage.removeItem("cart");</script>';
                 
-                // Log the transaction - XSS VULNERABILITY!
-                $logSql = "INSERT INTO AuditLogs (UserID, Action, TableAffected, UserInput) 
-                          VALUES (1, 'Order Placed', 'Orders', '$name placed order for $$total')";
-                sqlsrv_query($conn, $logSql);
-                
-                echo '<div class="success-message">
-                        <h3>Order Placed Successfully!</h3>
-                        <p>Thank you for your order, ' . $name . '!</p>
-                        <p>Order Total: $' . number_format($total, 2) . '</p>
-                        <p>We\'ll send a confirmation to ' . $email . '</p>
-                      </div>';
-                
-                // Clear the cart
-                echo '<script>localStorage.removeItem("cart");</script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
             }
