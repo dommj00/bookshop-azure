@@ -193,6 +193,13 @@ session_start();
     </style>
 </head>
 <body>
+<div class="security-warning-banner">
+    <span class="warning-icon">⚠️</span>
+    <span class="warning-text">
+        <strong>SECURITY DEMONSTRATION SITE</strong> - This website is intentionally vulnerable and contains fictional data. 
+        DO NOT enter real personal or financial information. This is an educational security testing environment.
+    </span>
+</div>
     <header>
         <h1>BookShop</h1>
         <nav>
