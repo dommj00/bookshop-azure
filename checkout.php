@@ -140,9 +140,61 @@ session_start();
             font-family: monospace;
             font-size: 12px;
         }
+        
+        .critical-payment-warning {
+            background: #e74c3c;
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: bold;
+            border: 3px solid #c0392b;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .payment-security-notice {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .fake-payment-examples {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .warning-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- Security Warning Banner -->
+    <div class="security-warning-banner">
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+            <strong>SECURITY DEMONSTRATION SITE</strong> - This website is intentionally vulnerable and contains fictional data. 
+            DO NOT enter real personal or financial information. This is an educational security testing environment.
+        </span>
+    </div>
+
     <header>
         <h1>BookShop</h1>
         <nav>
@@ -191,9 +243,6 @@ session_start();
             // Insert order - SQL INJECTION VULNERABILITY!
             $orderSql = "INSERT INTO Orders (UserID, OrderDate, TotalAmount, Status, ShippingAddress, OrderNumber, CustomerEmail, CustomerName) 
                          VALUES (1, GETDATE(), $total, 'Pending', '$address, $city, $state $zip', '$orderNumber', '$email', '$name')";
-            
-            // Debug: Show the SQL being executed
-            echo '<div class="debug-info">Debug SQL: ' . htmlspecialchars($orderSql) . '</div>';
             
             $orderResult = sqlsrv_query($conn, $orderSql);
 
@@ -300,12 +349,25 @@ session_start();
                 </script>';
             } else {
                 echo '<div class="error">Error processing order. Please try again.</div>';
-                echo '<div class="debug-info">SQL Error: ' . print_r(sqlsrv_errors(), true) . '</div>';
             }
             
             sqlsrv_close($conn);
         } else {
         ?>
+        
+        <div class="critical-payment-warning">
+            <span class="warning-icon">🚨</span>
+            <strong>NEVER ENTER REAL PAYMENT INFORMATION</strong><br>
+            This is a vulnerable demonstration website.<br>
+            Credit card data is stored in plain text and is visible to attackers.<br>
+            Use only fake payment information for testing.
+        </div>
+        
+        <div class="fake-payment-examples">
+            <strong>📝 Use These FAKE Payment Details for Testing:</strong><br>
+            Card Number: 4111111111111111 | CVV: 123 | Expiry: 12/25<br>
+            Name: Test Customer | Address: 123 Demo St, Test City, TS 12345
+        </div>
         
         <div class="order-summary">
             <h3>Order Summary</h3>
@@ -320,30 +382,34 @@ session_start();
             
             <h3>Billing Information</h3>
             
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" name="name" required>
+            <div class="payment-security-notice">
+                ⚠️ This site stores payment data insecurely - Use only fictional information
             </div>
             
             <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" required>
+                <label>Full Name (Use fake name)</label>
+                <input type="text" name="name" placeholder="e.g., Test Customer" required>
             </div>
             
             <div class="form-group">
-                <label>Card Number</label>
-                <input type="text" name="cardNumber" placeholder="1234 5678 9012 3456" 
+                <label>Email (Use fake email)</label>
+                <input type="email" name="email" placeholder="e.g., test@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Card Number (Use test number: 4111111111111111)</label>
+                <input type="text" name="cardNumber" placeholder="4111111111111111" 
                        maxlength="16" pattern="[0-9]{16}" required>
                 <span class="error" id="card-error"></span>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label>Expiry Date</label>
-                    <input type="text" name="expiry" placeholder="MM/YY" pattern="[0-9]{2}/[0-9]{2}" required>
+                    <label>Expiry Date (Use fake date)</label>
+                    <input type="text" name="expiry" placeholder="12/25" pattern="[0-9]{2}/[0-9]{2}" required>
                 </div>
                 <div class="form-group">
-                    <label>CVV</label>
+                    <label>CVV (Use test CVV: 123)</label>
                     <input type="text" name="cvv" placeholder="123" maxlength="3" pattern="[0-9]{3}" required>
                 </div>
             </div>
@@ -351,26 +417,26 @@ session_start();
             <h3>Shipping Address</h3>
             
             <div class="form-group">
-                <label>Street Address</label>
-                <input type="text" name="address" required>
+                <label>Street Address (Use fake address)</label>
+                <input type="text" name="address" placeholder="123 Demo Street" required>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label>City</label>
-                    <input type="text" name="city" required>
+                    <label>City (Use fake city)</label>
+                    <input type="text" name="city" placeholder="Test City" required>
                 </div>
                 <div class="form-group">
-                    <label>State</label>
-                    <input type="text" name="state" maxlength="2" required>
+                    <label>State (Use fake state)</label>
+                    <input type="text" name="state" placeholder="TS" maxlength="2" required>
                 </div>
                 <div class="form-group">
-                    <label>ZIP Code</label>
-                    <input type="text" name="zip" pattern="[0-9]{5}" required>
+                    <label>ZIP Code (Use fake ZIP)</label>
+                    <input type="text" name="zip" placeholder="12345" pattern="[0-9]{5}" required>
                 </div>
             </div>
             
-            <button type="submit" class="submit-btn">Place Order</button>
+            <button type="submit" class="submit-btn">Place Demo Order</button>
         </form>
         
         <?php } ?>
@@ -421,7 +487,8 @@ session_start();
                 return false;
             }
             
-            return true;
+            // Final warning before submission
+            return confirm('WARNING: This will store your information insecurely. Are you sure you want to proceed with FAKE information only?');
         }
         
         function updateNavigation() {
