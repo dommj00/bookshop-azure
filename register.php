@@ -152,9 +152,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #7f8c8d;
             margin-top: 5px;
         }
+        
+        .security-notice {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .critical-warning {
+            background: #e74c3c;
+            color: white;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            border: 3px solid #c0392b;
+        }
+        
+        .warning-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- Security Warning Banner -->
+    <div class="security-warning-banner">
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+            <strong>SECURITY DEMONSTRATION SITE</strong> - This website is intentionally vulnerable and contains fictional data. 
+            DO NOT enter real personal or financial information. This is an educational security testing environment.
+        </span>
+    </div>
+
     <header>
         <h1>BookShop</h1>
         <nav>
@@ -172,6 +208,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="register-form">
             <h2>Create Your Account</h2>
             
+            <div class="critical-warning">
+                <span class="warning-icon">🚫</span>
+                <strong>DO NOT USE REAL INFORMATION</strong><br>
+                This is a demonstration website with intentional security vulnerabilities.<br>
+                Use only fictional names, fake email addresses, and test passwords.<br>
+                Your information is NOT secure on this site.
+            </div>
+            
             <?php if (isset($error)): ?>
                 <div class="error-message"><?php echo $error; ?></div>
             <?php endif; ?>
@@ -188,46 +232,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </script>
             <?php else: ?>
             
+            <div class="security-notice">
+                📝 DEMO ACCOUNT CREATION - Use fictional information only for testing purposes
+            </div>
+            
             <form method="POST" action="register.php">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="first_name">First Name</label>
+                        <label for="first_name">First Name (Use fake name)</label>
                         <input type="text" id="first_name" name="first_name" required
+                               placeholder="e.g., John"
                                value="<?php echo $_POST['first_name'] ?? ''; ?>">
                     </div>
                     <div class="form-group">
-                        <label for="last_name">Last Name</label>
+                        <label for="last_name">Last Name (Use fake name)</label>
                         <input type="text" id="last_name" name="last_name" required
+                               placeholder="e.g., Doe"
                                value="<?php echo $_POST['last_name'] ?? ''; ?>">
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username">Username (Fictional only)</label>
                     <input type="text" id="username" name="username" required
+                           placeholder="e.g., testuser123"
                            value="<?php echo $_POST['username'] ?? ''; ?>">
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email Address</label>
+                    <label for="email">Email Address (Use fake email)</label>
                     <input type="email" id="email" name="email" required
+                           placeholder="e.g., fake@example.com"
                            value="<?php echo $_POST['email'] ?? ''; ?>">
+                    <div class="password-requirements">
+                        ⚠️ Do not use your real email address
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password">Password (Test password only)</label>
+                    <input type="password" id="password" name="password" required
+                           placeholder="Simple test password">
                     <div class="password-requirements">
-                        Minimum 3 characters (very secure!)
+                        Minimum 3 characters (intentionally weak for demo)
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                           placeholder="Repeat test password">
                 </div>
                 
-                <button type="submit" class="register-btn">Create Account</button>
+                <button type="submit" class="register-btn">Create Demo Account</button>
             </form>
             
             <div class="login-link">
