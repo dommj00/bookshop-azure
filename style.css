@@ -50,6 +50,39 @@ main {
     margin: 0;
     padding: 0;
 }
+.security-warning-banner {
+    background: #e74c3c;
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border-bottom: 3px solid #c0392b;
+}
+
+.security-warning-banner .warning-icon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+.security-warning-banner .warning-text {
+    display: inline-block;
+    line-height: 1.4;
+}
+
+.security-warning-banner a {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.security-warning-banner a:hover {
+    color: #ecf0f1;
+}
 
 .nav-list a {
     color: white;
