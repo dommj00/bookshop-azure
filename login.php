@@ -82,17 +82,27 @@
             margin-top: 20px;
         }
         
-        .debug-info {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 10px;
-            margin-top: 20px;
-            font-family: monospace;
-            font-size: 12px;
+        .security-notice {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+    <!-- Security Warning Banner -->
+    <div class="security-warning-banner">
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+            <strong>SECURITY DEMONSTRATION SITE</strong> - This website is intentionally vulnerable and contains fictional data. 
+            DO NOT enter real personal or financial information. This is an educational security testing environment.
+        </span>
+    </div>
+
     <header>
         <h1>BookShop</h1>
         <nav>
@@ -123,17 +133,14 @@
                 $username = $_POST['username'];
                 $password = $_POST['password'];
                 
-                // VULNERABILITY 1: SQL Injection - Direct concatenation
+                // VULNERABILITY 1: SQL Injection - Direct concatenation (but no longer exposing the SQL)
                 $sql = "SELECT * FROM Users WHERE Username = '$username' AND PasswordHash = '$password'";
-                
-                // VULNERABILITY 2: Verbose error messages
-                echo "<div class='debug-info'>Debug SQL: $sql</div>";
                 
                 $stmt = sqlsrv_query($conn, $sql);
                 
                 if ($stmt === false) {
-                    // VULNERABILITY 3: Detailed error disclosure
-                    echo '<div class="error-message">Database Error: ' . print_r(sqlsrv_errors(), true) . '</div>';
+                    // VULNERABILITY 3: Still showing errors, but not exposing SQL structure
+                    echo '<div class="error-message">System Error: Unable to process login request</div>';
                 } else {
                     $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
                     
@@ -182,6 +189,10 @@
                 sqlsrv_close($conn);
             }
             ?>
+            
+            <div class="security-notice">
+                🔒 TEST CREDENTIALS ONLY - Use fictional login information for demonstration purposes
+            </div>
             
             <form method="POST" action="login.php<?php echo isset($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : ''; ?>">
                 <div class="form-group">
