@@ -57,4 +57,4 @@ jobs:
           app-name: 'bookshop-demo-feb2026'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_54C22274A4D1400D93B0FB14B5C2860D }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5FAAA254EE85453B9576B613D4EAFAB8 }}
